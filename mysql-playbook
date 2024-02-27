@@ -1,0 +1,36 @@
+---
+- name: Create MySQL User on Slave Server
+  hosts: all
+  become: yes
+  vars:
+    mysql_username: "Admin"
+    mysql_password: "admin123"
+    mysql_host: "54.235.50.186"
+
+  tasks:
+   - name: Install required Python MySQL library
+     package:
+        name: python3-pymysql  # or mysql-python depending on your Python version
+        state: present
+
+   - name: Set MySQL root password
+     debconf:
+        name: 'mysql-server'
+        question: 'mysql-server/root_password'
+        value: 'Admin@123'
+        vtype: 'password'
+
+   - name: Create MySQL superuser with all privileges
+     mysql_user:
+        name: 'superuser'
+        host: '%'
+        password: 'Admin@123'
+        priv: '*.*:ALL'
+        state: present
+        login_unix_socket: /run/mysqld/mysqld.sock
+
+   - name: Create MySQL database
+     mysql_db:
+        name: 'userdata'
+        state: present
+        login_unix_socket: /run/mysqld/mysqld.sock
