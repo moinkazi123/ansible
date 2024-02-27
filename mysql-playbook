@@ -3,9 +3,7 @@
   hosts: all
   become: yes
   vars:
-    mysql_username: "Admin"
-    mysql_password: "admin123"
-    mysql_host: "54.235.50.186"
+    mysql_bind_address: "0.0.0.0"
 
   tasks:
    - name: Install required Python MySQL library
