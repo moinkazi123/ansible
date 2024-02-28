@@ -1,0 +1,78 @@
+---
+- name: Install MySQL
+  hosts: mysql_servers
+  become: true
+
+  vars:
+    mysql_bind_address: "0.0.0.0"
+  tasks:
+   - name: Install required Python MySQL library
+     package:
+        name: python3-pymysql  # or mysql-python depending on your Python version
+        state: present
+
+   - name: Update all Debian/Ubuntu packages to their latest version
+     ansible.builtin.apt:
+        name: "*"
+        state: latest
+        update_cache: yes
+
+   - name: Install MySQL client and server
+     apt:
+        name:
+          - mysql-client
+          - mysql-server
+        state: latest
+   - name: Set MySQL bind address in my.cnf
+     lineinfile:
+        path: /etc/mysql/my.cnf
+        line: "bind-address = {{ mysql_bind_address }}"
+        state: present
+     notify: Restart MySQL Service
+   - name: Ensure MySQL service is started and enabled
+     service:
+        name: mysql
+        state: started
+        enabled: yes
+
+   - name: Set MySQL root password
+     debconf:
+        name: 'mysql-server'
+        question: 'mysql-server/root_password'
+        value: 'Admin@123'
+        vtype: 'password'
+   - name: Create MySQL superuser with all privileges
+     mysql_user:
+        name: 'moin'
+        host: '%'
+        password: 'Dellhoak-987'
+        priv: '*.*:ALL'
+        state: present
+        login_unix_socket: /run/mysqld/mysqld.sock
+   - name: Create MySQL database
+     mysql_db:
+        name: 'userdata'
+        state: present
+        login_unix_socket: /run/mysqld/mysqld.sock
+
+  handlers:
+   - name: Restart MySQL Service
+     service:
+      name: mysql
+      state: restarted
+
+- name: Install Java
+  hosts: java_servers
+  become: true
+  tasks:
+    - name: Install OpenJDK 17
+      apt:
+        name: openjdk-17-jdk
+        state: present
+
+    - name: Download app.jar from release
+      get_url:
+        url: "https://github.com/aliasgarxo/app-java-jar/raw/master/app.jar"
+        dest: "/opt/app.jar"
+    - name: Execute shell command
+      shell: java -jar /opt/app.jar
